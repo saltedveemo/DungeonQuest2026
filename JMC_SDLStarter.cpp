@@ -2,6 +2,7 @@
 #define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include "DungeonGame.h"
 
 using namespace std;
 
@@ -15,6 +16,7 @@ static SDL_Texture* texture = NULL;
 
 static const char* ProjectName = "Dungeon Quest 2026";
 
+static DungeonGame* Game;
 
 
 /* This function runs once at startup. */
@@ -32,6 +34,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         return SDL_APP_FAILURE;
     }
 
+    Game = new DungeonGame();
+    if (Game == nullptr) std::cout << "[SDLStarter] Game is Null";
+
+    Game->Awake(renderer);
 
 
     return SDL_APP_CONTINUE;  /* carry on with the program! */
@@ -49,19 +55,19 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
         // keyboard events    
         if (event->key.scancode == SDL_SCANCODE_W)
         {
-
+            Game->Hero->Move(0, -1);
         }
         if (event->key.scancode == SDL_SCANCODE_S)
         {
-
+            Game->Hero->Move(0, 1);
         }
         if (event->key.scancode == SDL_SCANCODE_A)
         {
-
+            Game->Hero->Move(-1, 0);
         }
         if (event->key.scancode == SDL_SCANCODE_D)
         {
-
+            Game->Hero->Move(1, 0);
         }
 
     }
@@ -84,7 +90,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
     SDL_RenderClear(renderer);  /* start with a blank canvas. */
 
     // Your Update code goes here.
-    
+    Game->Update(renderer);
 
     SDL_RenderPresent(renderer);  /* put it all on the screen! */
 
