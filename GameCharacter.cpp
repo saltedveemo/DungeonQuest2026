@@ -1,4 +1,5 @@
 #include "GameCharacter.h"
+#include <iostream>
 
 
 GameCharacter::GameCharacter()
