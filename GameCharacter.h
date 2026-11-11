@@ -20,5 +20,7 @@ public:
 
 	int PosX;
 	int PosY;
+	int CoordinateX;
+	int CoordinateY;
 };
 

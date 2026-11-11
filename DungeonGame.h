@@ -18,7 +18,19 @@ const static std::string FloorImagePath		= "Sprites/Tile_carpet_base.bmp";
 const static int RoomSize = 10;
 const static int DungeonSize = 10;
 
-const static std::list<std::string> RoomPool = { "Data/Rooms/Room01.bmp", "Data/Rooms/Room02.bmp", "Data/Rooms/Room03.bmp", "Data/Rooms/Room04.bmp", "Data/Rooms/Room05.bmp" };
+const static std::string RoomPathPool[] {"Data/Rooms/Room01.bmp", "Data/Rooms/Room02.bmp", "Data/Rooms/Room03.bmp", "Data/Rooms/Room04.bmp", "Data/Rooms/Room05.bmp"};
+
+struct TargetTileContext {
+	bool IsWalkable;
+	bool IsOutOfBounds;
+	Direction TargetDirection;
+
+	TargetTileContext() {};
+	TargetTileContext(bool _isWalkable, bool _isOutOfBounds, Direction _direction) : IsWalkable(_isWalkable), IsOutOfBounds(_isOutOfBounds), TargetDirection(_direction) 
+	{
+
+	}
+};
 
 
 
@@ -32,16 +44,16 @@ public:
 	void Update(SDL_Renderer*);
 
 	void LoadTextures(SDL_Renderer*);
-
 	void LoadRoom(const char* filename);
+	void GenerateDungeon();
 
 	Tile* GetNeighbourTile(int x, int y, Direction _direction);
+	const static std::string* GetRandomRoomPath();
 
-	void GenerateRoom();
+	TargetTileContext TryMoveTile(int x, int y, Direction _direction);
 
 	Tile CurrentRoom[RoomSize][RoomSize];
-
-	std::string CurrentDungeon[DungeonSize][DungeonSize];
+	int CurrentDungeon[DungeonSize][DungeonSize];
 
 	Player* Hero;
 	Enemy* Goblin;
@@ -51,7 +63,6 @@ public:
 	SDL_Texture* WallTexture;
 	SDL_Texture* FloorTexture;
 	
-
 private:
 
 };

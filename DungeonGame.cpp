@@ -8,6 +8,7 @@ DungeonGame::~DungeonGame()
 {
 }
 
+//---Cycle----
 void DungeonGame::Awake(SDL_Renderer* _renderer)
 {
 	this->Hero = new Player;
@@ -16,8 +17,11 @@ void DungeonGame::Awake(SDL_Renderer* _renderer)
 	this->Goblin = new Enemy;
 	this->Goblin->Initialize(_renderer, goblinImagePath, 1, 1, tileSize);
 
+	GenerateDungeon();
+
 	LoadTextures(_renderer);
-	LoadRoom("Data/Rooms/Room02.bmp");
+	int i = rand() % (std::size(RoomPathPool) - 1);
+	LoadRoom(RoomPathPool[i].c_str());
 }
 
 void DungeonGame::Update(SDL_Renderer* _renderer)
@@ -37,10 +41,15 @@ void DungeonGame::Update(SDL_Renderer* _renderer)
 	SDL_RenderTexture(_renderer, Goblin->Texture, NULL, &Goblin->Rect);
 }
 
+
+//---Loading---
 void DungeonGame::LoadTextures(SDL_Renderer* _renderer)
 {
 	WallTexture = IMG_LoadTexture(_renderer, WallImagePath.c_str());
+	SDL_SetTextureScaleMode(WallTexture, SDL_SCALEMODE_NEAREST);
+
 	FloorTexture = IMG_LoadTexture(_renderer, FloorImagePath.c_str());
+	SDL_SetTextureScaleMode(FloorTexture, SDL_SCALEMODE_NEAREST);
 }
 
 void DungeonGame::LoadRoom(const char* filename)
@@ -63,8 +72,26 @@ void DungeonGame::LoadRoom(const char* filename)
 			CurrentRoom[x][y].Configure(col, x, y, tileSize, FloorTexture);
 		}
 	}
-	std::cout << "Room '" << filename << "' has been loaded";
+	std::cout << "Room '" << filename << "' has been loaded\n\n";
 }
+
+void DungeonGame::GenerateDungeon()
+{
+	std::cout << "Generate Dungeon Result:\n\n";
+
+	for (int y = 0; y < DungeonSize; y++) {
+		for (int x = 0; x < DungeonSize; x++) {
+			CurrentDungeon[x][y] = rand() % (std::size(RoomPathPool));
+			std::cout << CurrentDungeon[x][y];
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
+
+
+//---Functions---
 
 Tile* DungeonGame::GetNeighbourTile(int x, int y, Direction _direction)
 {
@@ -74,10 +101,31 @@ Tile* DungeonGame::GetNeighbourTile(int x, int y, Direction _direction)
 		break;
 	case Down:	return &CurrentRoom[x][y + 1];
 		break;
-	case Left:	return &CurrentRoom[x + 1][y];
+	case Left:	return &CurrentRoom[x - 1][y];
 		break;
-	case Right:	return &CurrentRoom[x - 1][y];
+	case Right:	return &CurrentRoom[x + 1][y];
 		break;
 	}
 	return nullptr;
+}
+
+
+const std::string* DungeonGame::GetRandomRoomPath()
+{
+	int i = rand() % RoomPathPool->length();
+	return &RoomPathPool[i];
+}
+
+TargetTileContext DungeonGame::TryMoveTile(int x, int y, Direction _direction)
+{
+	Tile* _targetTile = GetNeighbourTile(x, y, _direction);
+	bool _outOfBounds = !((x >= 0 && x < RoomSize) && (x >= 0 && x < RoomSize));
+	TargetTileContext result = TargetTileContext(_targetTile->IsWalkable, _outOfBounds, _direction);
+
+	std::cout << "Target Tile Context Created for target X:" << x << " Y:" << y << std::endl;
+	std::cout << "	IsWalkable: " << result.IsWalkable << std::endl;
+	std::cout << "	IsOutOfBounds: " << result.IsOutOfBounds << std::endl;
+	std::cout << "	Direction: " << result.TargetDirection << std::endl  << std::endl ;
+
+	return result;
 }

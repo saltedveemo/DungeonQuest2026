@@ -34,4 +34,5 @@ void GameCharacter::Initialize(SDL_Renderer* _renderer, std::string _imagePath, 
 	SetSize(size, size);
 	ImagePath = _imagePath;
 	Texture = IMG_LoadTexture(_renderer, ImagePath.c_str());
+	SDL_SetTextureScaleMode(Texture, SDL_SCALEMODE_NEAREST);
 }
