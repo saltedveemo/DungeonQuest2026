@@ -7,9 +7,11 @@ class GameCharacter
 public:
 	GameCharacter();
 	~GameCharacter();
+	GameCharacter(SDL_Renderer* _renderer, std::string _imagePath, float _x, float _y, float size);
 
 	void Move(float x, float y);
 	void SetPosition(float, float);
+	void SetCoordinate(int _x, int _y);
 	void SetSize(float, float);
 	void Initialize(SDL_Renderer* _renderer, std::string _imagePath, float _x, float _y, float size);
 
@@ -20,7 +22,7 @@ public:
 
 	int PosX;
 	int PosY;
-	int CoordinateX;
-	int CoordinateY;
+	int CoordX;
+	int CoordY;
 };
 

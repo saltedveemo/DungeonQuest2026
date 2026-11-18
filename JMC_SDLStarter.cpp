@@ -18,6 +18,8 @@ static const char* ProjectName = "Dungeon Quest 2026";
 
 static DungeonGame* Game;
 
+static Uint64 now;
+static Uint64 last;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
@@ -55,19 +57,19 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
         // keyboard events    
         if (event->key.scancode == SDL_SCANCODE_W)
         {
-            Game->Hero->Move(0, -1);
+            Game->MoveCharacter(Game->Hero, Up);
         }
         if (event->key.scancode == SDL_SCANCODE_S)
         {
-            Game->Hero->Move(0, 1);
+            Game->MoveCharacter(Game->Hero, Down);
         }
         if (event->key.scancode == SDL_SCANCODE_A)
         {
-            Game->Hero->Move(-1, 0);
+            Game->MoveCharacter(Game->Hero, Left);
         }
         if (event->key.scancode == SDL_SCANCODE_D)
         {
-            Game->Hero->Move(1, 0);
+            Game->MoveCharacter(Game->Hero, Right);
         }
 
     }
@@ -83,14 +85,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
     Think of this like Unity's Update() loop */
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-
+    last = now;
+    now = SDL_GetPerformanceCounter();
+    double deltaTime = (double)(now - last) / (double)SDL_GetPerformanceFrequency();
 
     /* as you can see from this, rendering draws over whatever was drawn before it. */
     SDL_SetRenderDrawColor(renderer, 33, 33, 33, SDL_ALPHA_OPAQUE);  /* dark gray, full alpha */
     SDL_RenderClear(renderer);  /* start with a blank canvas. */
 
     // Your Update code goes here.
-    Game->Update(renderer);
+    Game->Update(renderer, deltaTime);
+
+    Game->Draw(renderer);
 
     SDL_RenderPresent(renderer);  /* put it all on the screen! */
 

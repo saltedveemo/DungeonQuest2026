@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 
+
 const static enum Direction {
 	Up,
 	Down,
@@ -19,6 +20,7 @@ public:
 	SDL_Texture* Texture;
 	SDL_FRect Rect;
 	std::map<Direction, Tile*> Neighbour;
+
 
 	void Configure(SDL_Color& color);
 	void Configure(SDL_Color& color, float x, float y, float size, SDL_Texture* texture);
