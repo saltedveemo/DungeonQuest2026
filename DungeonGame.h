@@ -69,6 +69,11 @@ public:
 	//Utility
 	bool IsInRange(float _val, float _lowerBound, float _upperBound);
 
+	void MoveEnemies(double _deltaTime);
+	void SpawnEnemies();
+	void DestroyAllEnemies();
+
+	SDL_Renderer* Renderer;
 
 	Tile CurrentRoom[RoomSize][RoomSize];
 	int CurrentDungeon[DungeonSize][DungeonSize];
@@ -85,6 +90,16 @@ public:
 	SDL_Texture* FloorTexture;
 
 	std::list<GameCharacter*> Characters;
+	std::list<Enemy*> Enemies;
+
+
+	float CurrentEnemyMoveCooldwn = 0;
+	float EnemyMoveInterval = 1.2;
+	int MinEnemyCount = 0;
+	int MaxEnemyCount = 3;
+
+	int SpawnBoundMin = 1;
+	int SpawnBoundMax = 8;
 
 	//actions
 	void MoveHero(int _x, int _y);

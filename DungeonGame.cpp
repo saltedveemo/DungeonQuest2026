@@ -14,6 +14,7 @@ DungeonGame::~DungeonGame()
 
 void DungeonGame::Awake(SDL_Renderer* _renderer)
 {
+	Renderer = _renderer;
 
 	GenerateDungeon();
 
@@ -29,15 +30,12 @@ void DungeonGame::Awake(SDL_Renderer* _renderer)
 	this->Hero->Initialize(_renderer, heroImagePath, 2, 2, tileSize);
 	Characters.push_back(this->Hero);
 
-
-	this->Goblin = new Enemy;
-	this->Goblin->Initialize(_renderer, goblinImagePath, 1, 1, tileSize);
-	Characters.push_back(this->Goblin);
+//	SpawnEnemies();
 }
 
 void DungeonGame::Update(SDL_Renderer* _renderer, double _deltaTime)
 {
-
+	MoveEnemies(_deltaTime);
 }
 
 void DungeonGame::Draw(SDL_Renderer* _renderer)
@@ -52,6 +50,10 @@ void DungeonGame::Draw(SDL_Renderer* _renderer)
 	//Game Characters
 	for (GameCharacter* c : Characters) {
 		SDL_RenderTexture(_renderer, c->Texture, NULL, &c->Rect);
+	}
+	
+	for (Enemy* e : Enemies) {
+		SDL_RenderTexture(_renderer, e->Texture, NULL, &e->Rect);
 	}
 }
 
@@ -112,32 +114,11 @@ bool DungeonGame::TryLoadNeighbourRoom(Direction _direction)
 		case Right:	_x++; break;
 	}
 
-	if (!(IsInRange(_x, 0, DungeonSize - 1) && IsInRange(_y, 0, DungeonSize - 1))) return false;
-
-	int _roomID = CurrentDungeon[_x][_y];
-	const char* filename = RoomPathPool[_roomID].c_str();
-	SDL_Surface* surf = SDL_LoadBMP(filename);
-
-	const SDL_PixelFormatDetails* pixelDetails = SDL_GetPixelFormatDetails(surf->format);
-	const Uint8 bpp = SDL_BYTESPERPIXEL(surf->format);
-	SDL_Color col;
-
-	//configuring
-	for (int y = 0; y < surf->h; y++) {
-		for (int x = 0; x < surf->w; x++) {
-			Uint8* pixel = static_cast<Uint8*>(surf->pixels) + y * surf->pitch + x * bpp;
-			SDL_GetRGB(*reinterpret_cast<Uint32*>(pixel), pixelDetails, NULL, &col.r, &col.g,
-				&col.b);
-			// col now contains pixel colour at position x,y!
-			// TODO, configure the tile at x/y with this colour.
-
-			CurrentRoom[x][y].Configure(col, x, y, tileSize, FloorTexture);
-		}
+	if (!IsInRange(_x, 0, DungeonSize - 1) || !IsInRange(_y, 0, DungeonSize - 1)) {
+		std::cout << "Room at (" << _x << ", " << _y << ") is out of bounds\n\n";
+		return false;
 	}
-
-	CurrentRoomX = _x;
-	CurrentRoomY = _y;
-	std::cout << "Room '" << filename << "' has been loaded at (" << CurrentRoomX << ", " << CurrentRoomY << ")\n\n";
+	LoadRoom(_x, _y);
 
 	return true;
 }
@@ -186,6 +167,10 @@ GameCharacter* DungeonGame::TryGetCharacterAtCoord(int _x, int _y)
 	for (GameCharacter* c : Characters) {
 		if ((c->CoordX == _x) && (c->CoordY == _y)) return c;
 	}
+	
+	for (Enemy* e : Enemies) {
+		if ((e->CoordX == _x) && (e->CoordY == _y)) return e;
+	}
 	return nullptr;
 }
 
@@ -213,7 +198,7 @@ TargetTileContext DungeonGame::TryGetNeighbourTile(int _x, int _y, Direction _di
 	}
 	Tile* _targetTile = &CurrentRoom[_xx][_yy];
 	
-	bool _outOfBounds = !(IsInRange(_xx, 0, RoomSize - 1) && IsInRange(_yy, 0, RoomSize - 1));
+	bool _outOfBounds = (!IsInRange(_xx, 0, RoomSize - 1) || !IsInRange(_yy, 0, RoomSize - 1));
 
 	GameCharacter* _occupant = TryGetCharacterAtCoord(_xx, _yy);
 
@@ -233,14 +218,14 @@ TargetTileContext DungeonGame::TryGetNeighbourTile(int _x, int _y, Direction _di
 
 
 
-
+//Moves a given character :D
 void DungeonGame::MoveCharacter(GameCharacter* _character, Direction _direction)
 {
 	int _x = _character->CoordX;
 	int _y = _character->CoordY;
 	TargetTileContext context = TryGetNeighbourTile(_x, _y, _direction);
 
-	if ((context.IsWalkable) && (context.Occupant == nullptr)){
+	if ((context.IsWalkable) && (context.Occupant == nullptr) && (!context.IsOutOfBounds)){
 		switch (_direction) {
 			case Up:	_character->Move(0, -1); break;
 			case Down:	_character->Move(0, 1); break;
@@ -250,13 +235,14 @@ void DungeonGame::MoveCharacter(GameCharacter* _character, Direction _direction)
 	}
 }
 
+//Variation of MoveCharacter but specifically for player
 void DungeonGame::MoveHero(Direction _direction)
 {
 	int _x = Hero->CoordX;
 	int _y = Hero->CoordY;
 	TargetTileContext context = TryGetNeighbourTile(_x, _y, _direction);
 
-	if ((context.IsWalkable) && (context.Occupant == nullptr)) {
+	if ((context.IsWalkable) && (context.Occupant == nullptr) && (!context.IsOutOfBounds)) {
 		switch (_direction) {
 			case Up:	Hero->Move(0, -1); break;
 			case Down:	Hero->Move(0, 1); break;
@@ -265,11 +251,74 @@ void DungeonGame::MoveHero(Direction _direction)
 		}
 	}
 
-	if (context.IsOutOfBounds) {
-		TryLoadNeighbourRoom(_direction);
+	
+	if (context.IsOutOfBounds) { //Room Transfer
+		bool _loaded = TryLoadNeighbourRoom(_direction);
+
+		int xx = Hero->CoordX;
+		int yy = Hero->CoordY;
+		switch (_direction) {
+			case Up:	yy = 9; break;
+			case Down:	yy = 0; break;
+			case Left:	xx = 9; break;
+			case Right: xx = 0; break;
+		}
+
+		Hero->SetCoordinate(xx, yy);
+
+		DestroyAllEnemies();
+		SpawnEnemies();
 	}
 }
 
+
+
+//___________Enemy Management_________
+void DungeonGame::MoveEnemies(double _deltaTime)
+{
+	CurrentEnemyMoveCooldwn -= _deltaTime * EnemyMoveInterval;
+
+	if (CurrentEnemyMoveCooldwn <= 0) { //move trigger
+		CurrentEnemyMoveCooldwn = EnemyMoveInterval;
+
+		for (Enemy* e : Enemies) {
+			Direction _directionPool[] = { Up, Down, Left, Right };
+			int i = SDL_rand(10) % 4;
+			MoveCharacter(e, _directionPool[i]);
+		}
+	}
+}
+
+void DungeonGame::SpawnEnemies()
+{
+	for (int i = 0; i < MaxEnemyCount; i++) {
+		int _sx = SDL_rand((SpawnBoundMax + 1 - SpawnBoundMin) + SpawnBoundMin);
+		int _sy = SDL_rand((SpawnBoundMax + 1 - SpawnBoundMin) + SpawnBoundMin);
+
+		while (!CurrentRoom[_sx][_sy].IsWalkable)
+		{
+			_sx = SDL_rand((SpawnBoundMax + 1 - SpawnBoundMin) + SpawnBoundMin);
+			_sy = SDL_rand((SpawnBoundMax + 1 - SpawnBoundMin) + SpawnBoundMin);
+		}
+
+		Enemy* _newE = new Enemy;
+		_newE->Initialize(Renderer, goblinImagePath, _sx, _sy, tileSize);
+		Enemies.push_back(_newE);
+	}
+}
+
+void DungeonGame::DestroyAllEnemies()
+{
+	for (Enemy* e : Enemies) {
+		delete e;
+	}
+	Enemies.clear();
+}
+
+
+
+
+//_________Utility__________
 bool DungeonGame::IsInRange(float _val, float _lowerBound, float _upperBound) {
-	return (_val >= 0 && _val <= RoomSize);
+	return (_val >= _lowerBound && _val <= _upperBound);
 }

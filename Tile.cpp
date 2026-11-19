@@ -16,7 +16,7 @@ void Tile::Configure(SDL_Color& color, float x, float y, float size, SDL_Texture
 	IsWalkable = !CompareColor(color, black);
 
 	this->Rect = SDL_FRect{ x*size, y*size, size, size };
-	if (IsWalkable) this->Texture = texture;
+	this->Texture = (IsWalkable) ? texture : nullptr;
 }
 
 bool Tile::CompareColor(SDL_Color& color1, SDL_Color& color2)

@@ -57,19 +57,19 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
         // keyboard events    
         if (event->key.scancode == SDL_SCANCODE_W)
         {
-            Game->MoveCharacter(Game->Hero, Up);
+            Game->MoveHero(Up);
         }
         if (event->key.scancode == SDL_SCANCODE_S)
         {
-            Game->MoveCharacter(Game->Hero, Down);
+            Game->MoveHero(Down);
         }
         if (event->key.scancode == SDL_SCANCODE_A)
         {
-            Game->MoveCharacter(Game->Hero, Left);
+            Game->MoveHero(Left);
         }
         if (event->key.scancode == SDL_SCANCODE_D)
         {
-            Game->MoveCharacter(Game->Hero, Right);
+            Game->MoveHero(Right);
         }
 
     }
